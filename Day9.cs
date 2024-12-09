@@ -27,15 +27,24 @@ public class Day9
 
         Defrag(usedList, freeList);
 
+        long checksum = CalculateChecksum(usedList);
+
+        Console.WriteLine(checksum);
+    }
+
+    public void Part2()
+    {
+        var data = Utils.LoadData(9).Trim();
+        var usedList = new List<UsedBlock>();
+        var freeList = new List<FreeBlock>();
+
+        ParseData(data, usedList, freeList);
+
+        Defrag2(usedList, freeList);
+
         //Calculate checksum
         long checksum = 0;
-        foreach (var used in usedList)
-        {
-            for (int i = 0; i < used.Length; i++)
-            {
-                checksum += (used.Start + i) * used.FileId;
-            }
-        }
+        checksum = CalculateChecksum(usedList);
 
         Console.WriteLine(checksum);
     }
@@ -47,27 +56,55 @@ public class Day9
             var usedBlock = usedList[^1];
             var freeBlock = freeList[0];
 
+            //The order of the used list isn't really important, so just move used blocks to the front
+            //of the list when they're dealt with
             if (usedBlock.Length == freeBlock.Length)
             {
                 usedBlock.Start = freeBlock.Start;
                 freeList.Remove(freeBlock);
+                usedList.Remove(usedBlock);
+                usedList.Insert(0, usedBlock);
             }
             else if (freeBlock.Length > usedBlock.Length)
             {
                 usedBlock.Start = freeBlock.Start;
                 freeBlock.Start += usedBlock.Length;
                 freeBlock.Length -= usedBlock.Length;
+                usedList.Remove(usedBlock);
+                usedList.Insert(0, usedBlock);
             }
             else
             {
-                usedList.Add(new UsedBlock(){Start = freeBlock.Start, FileId = usedBlock.FileId, Length = freeBlock.Length});
-                freeBlock.Start = usedBlock.Start;
-                usedBlock.Start += freeBlock.Length;
+                usedList.Insert(0, new UsedBlock(){Start = freeBlock.Start, FileId = usedBlock.FileId, Length = freeBlock.Length});
                 usedBlock.Length -= freeBlock.Length;
-                freeList.Sort((a, b) => (a.Start.CompareTo(b.Start)));
+                freeList.Remove(freeBlock);
             }
+        }
+    }
 
-            usedList.Sort((a, b) => (a.Start.CompareTo(b.Start)));
+    private void Defrag2(List<UsedBlock> usedList, List<FreeBlock> freeList)
+    {
+        List <UsedBlock> defragOrder = [];
+        defragOrder.AddRange(usedList);
+        defragOrder.Reverse();
+
+        foreach (var usedBlock in defragOrder)
+        {
+            var freeBlock = freeList.FirstOrDefault(f => f.Length >= usedBlock.Length);
+            if (freeBlock != null && freeBlock.Start < usedBlock.Start)
+            {
+                if (usedBlock.Length == freeBlock.Length)
+                {
+                    usedBlock.Start = freeBlock.Start;
+                    freeList.Remove(freeBlock);
+                }
+                else if (freeBlock.Length > usedBlock.Length)
+                {
+                    usedBlock.Start = freeBlock.Start;
+                    freeBlock.Start += usedBlock.Length;
+                    freeBlock.Length -= usedBlock.Length;
+                }
+            }
         }
     }
 
@@ -100,10 +137,17 @@ public class Day9
         }
     }
 
-
-    public void Part2()
+    private static long CalculateChecksum(List<UsedBlock> usedList)
     {
-        var data = Utils.LoadData(9);
-    }
+        long checksum = 0;
+        foreach (var used in usedList)
+        {
+            for (int i = 0; i < used.Length; i++)
+            {
+                checksum += (used.Start + i) * used.FileId;
+            }
+        }
 
+        return checksum;
+    }
 }
