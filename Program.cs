@@ -1,6 +1,6 @@
 using AoC2024;
 
-var solver = new Day9();
+var solver = new Day11();
 System.DateTime start = System.DateTime.Now;
 solver.Part1();
 solver.Part2();
